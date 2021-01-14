@@ -2,7 +2,7 @@ import json
 from googleplaces import GooglePlaces, types
 
 API_KEY = 'AIzaSyB7D9c1Fb1hDD-hHUE1bh0mL0Xc1PMnyfc'
-google_places = GooglePlaces(API_KEY)
+
 
 
 category_to_subcats = {
@@ -29,9 +29,9 @@ def create_obj_dict(subcat, name, lat, lng):
       }
 
 
-def fetch_for_category(category, coordinates):
+def fetch_for_category(places_api, category, coordinates):
     subcat_list = category_to_subcats[category]
-    query_result = google_places.nearby_search(
+    query_result = places_api.nearby_search(
         lat_lng=coordinates,
         types=subcat_list,
         radius=2000)
@@ -49,17 +49,23 @@ def fetch_for_category(category, coordinates):
     return {"type": "FeatureCollection", "features": feature_list}
 
 
-def create_map_pois():
+def create_map_pois(gui_data):
+    places_api = GooglePlaces(gui_data['api_key'])
+
     project_lat = 53.945570041161204
     project_lng = 14.182379056191083
     lat_lng = {'lat': project_lat, 'lng': project_lng}
 
     pois = {}
-    for cat in category_to_subcats.keys():
-        pois[cat+"Pois"] = fetch_for_category(cat, lat_lng)
+    for cat in gui_data['categories']:
+        pois[cat+"Pois"] = fetch_for_category(places_api, cat, gui_data['lat_lng'])
+    return pois
 
-    with open('tst.json', 'w') as f:
-        json.dump(pois, f, ensure_ascii=False, indent=2)
+
+def validate_gui_data(data):
+    # validate KEY
+    # validate lat & lng
+    pass
 
 
 if __name__ == '__main__':
