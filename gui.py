@@ -2,7 +2,7 @@ from tkinter import *
 from tkinter.filedialog import askdirectory
 import os
 import json
-from fetch import category_to_subcats, create_map_pois, validate_gui_data
+from fetch import category_to_subcats, create_map_pois, validate_gui_data, API_KEY
 
 
 class CatSelector(Frame):
@@ -23,12 +23,17 @@ class CatSelector(Frame):
 
 
 class LabelledButton:
-    def __init__(self, parent, label, row):
+    WIDTH = 40
+
+    def __init__(self, parent, label, row, text=''):
         self.__lbl = Label(parent, text=label)
         self.__lbl.grid(row=row, column=0)
 
-        self.__txt_field = Entry(parent, width=20)
+        self.__txt_field = Entry(parent, width=self.WIDTH)
         self.__txt_field.grid(row=row, column=1)
+
+        if text:
+            self.__txt_field.insert(0, text)
 
     def get(self):
         return self.__txt_field.get()
@@ -51,7 +56,7 @@ class DirectorySelector:
 
 
 class Gui(Tk):
-    __size = '450x350'
+    __size = '550x350'
     __title = "Fetch map POIs"
 
     def __init__(self, **kwargs):
@@ -61,7 +66,7 @@ class Gui(Tk):
         self.__create_buttons()
 
     def __create_buttons(self):
-        self.key = LabelledButton(self, "API_KEY", 0)
+        self.key = LabelledButton(self, "API_KEY", 0, text=API_KEY)
         self.lat = LabelledButton(self, "Latitude", 1)
         self.lng = LabelledButton(self, "Longitude", 2)
         self.project = LabelledButton(self, "Project name", 3)

@@ -1,8 +1,6 @@
-import json
 from googleplaces import GooglePlaces, types
 
 API_KEY = 'AIzaSyB7D9c1Fb1hDD-hHUE1bh0mL0Xc1PMnyfc'
-
 
 
 category_to_subcats = {
