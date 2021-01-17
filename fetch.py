@@ -1,7 +1,20 @@
+import os
+import json
+
+from tkinter import *
+from tkinter import messagebox
+from tkinter.filedialog import askdirectory
+
 from googleplaces import GooglePlaces, types
 
-API_KEY = 'AIzaSyB7D9c1Fb1hDD-hHUE1bh0mL0Xc1PMnyfc'
 
+''' ---------------------------------
+    
+    SECTION 1: Logc
+
+--------------------------------- '''
+
+API_KEY = 'AIzaSyB7D9c1Fb1hDD-hHUE1bh0mL0Xc1PMnyfc'
 
 category_to_subcats = {
     'bakery': [types.TYPE_BAKERY],
@@ -50,10 +63,6 @@ def fetch_for_category(places_api, category, coordinates):
 def create_map_pois(gui_data):
     places_api = GooglePlaces(gui_data['api_key'])
 
-    project_lat = 53.945570041161204
-    project_lng = 14.182379056191083
-    lat_lng = {'lat': project_lat, 'lng': project_lng}
-
     pois = {}
     for cat in gui_data['categories']:
         pois[cat+"Pois"] = fetch_for_category(places_api, cat, gui_data['lat_lng'])
@@ -61,11 +70,133 @@ def create_map_pois(gui_data):
 
 
 def validate_gui_data(data):
-    # validate KEY
-    # validate lat & lng
-    pass
+    errors = []
+    if not data['lat_lng']['lat']:
+        errors.append('Latitude must not be empty')
+    if not data['lat_lng']['lng']:
+        errors.append('Longitude must not be empty')
+    if not data['project_name']:
+        errors.append('Project must be named')
+    if not len(data['categories']):
+        errors.append('At least one category must be selected')
+    if not data['target_path']:
+        errors.append('TargetPath must be specified')
+    return errors
+
+
+''' ---------------------------------
+
+    SECTION 2: UI
+
+--------------------------------- '''
+
+
+class CatSelector(Frame):
+    def __init__(self, parent, *args):
+        super(CatSelector, self).__init__(parent, *args)
+        Label(self, text='Select POIs').grid()
+        self.buttons = {}
+        row_idx = 1
+        for cat in category_to_subcats.keys():
+            cb = IntVar()
+            btn = Checkbutton(self, text=cat, variable=cb)
+            btn.grid(row=row_idx, sticky='W')
+            self.buttons[cat] = cb
+            row_idx += 1
+
+    def get(self):
+        selected_cats = []
+        for cat, cb in self.buttons.items():
+            if cb.get():
+                selected_cats.append(cat)
+        return selected_cats
+
+
+class LabelledButton:
+    def __init__(self, parent, label, row, text=''):
+        self.__lbl = Label(parent, text=label)
+        self.__lbl.grid(row=row, column=0)
+
+        self.__txt_field = Entry(parent, width=TEXT_WIDTH)
+        self.__txt_field.grid(row=row, column=1)
+
+        if text:
+            self.__txt_field.insert(0, text)
+
+    def get(self):
+        return self.__txt_field.get()
+
+
+class DirectorySelector:
+    def __init__(self, parent, row):
+        self.__lbl = Label(parent, text='', width=TEXT_WIDTH)
+        self.__lbl.grid(row=row, column=1)
+
+        self.__btn = Button(parent, text='Select target folder', command=self.select)
+        self.__btn.grid(row=row, column=0)
+
+    def select(self):
+        path = askdirectory(title='Select Folder')  # shows dialog box and return the path
+        self.__lbl.config(text=path)
+
+    def get(self):
+        return self.__lbl.cget('text')
+
+
+TEXT_WIDTH = 40
+
+
+class Gui(Tk):
+    __size = '550x350'
+    __title = "Fetch map POIs"
+
+    def __init__(self, **kwargs):
+        super(Gui, self).__init__(**kwargs)
+
+        # p1 = PhotoImage(file='./icon.png')
+        # self.iconphoto(False, p1)
+
+        self.title(self.__title)
+        self.geometry(self.__size)
+        self.__create_buttons()
+
+    def __create_buttons(self):
+        self.key = LabelledButton(self, "API_KEY", 0, text=API_KEY)
+        self.lat = LabelledButton(self, "Latitude", 1)
+        self.lng = LabelledButton(self, "Longitude", 2)
+        self.project = LabelledButton(self, "Project name", 3)
+        self.cat_selector = CatSelector(self)
+        self.cat_selector.grid(row=4, column=1)
+        self.target_selector = DirectorySelector(self, 5)
+
+        self.generate_btn = Button(self, text="Generate json", command=self.generate_json)
+        self.generate_btn.grid(row=6, column=0)
+
+    def fetch_data(self):
+        data = {'api_key': self.key.get(),
+                'lat_lng': {'lat': self.lat.get(), 'lng': self.lng.get()},
+                'project_name': self.project.get(),
+                'target_path': self.target_selector.get(),
+                'categories': self.cat_selector.get()
+                }
+        return data
+
+    def generate_json(self):
+        data = self.fetch_data()
+        errors = validate_gui_data(data)
+
+        if len(errors):
+            messagebox.showerror("Data Missing", '\n'.join(errors))
+        else:
+
+            json_body = create_map_pois(data)
+            target_file = os.path.join(data['target_path'], data['project_name'] + '_pois.json')
+
+            with open(target_file, 'w') as f:
+                json.dump(json_body, f, ensure_ascii=False, indent=2)
+            messagebox.showinfo("Success", "Json generated, check \n" + target_file)
 
 
 if __name__ == '__main__':
-    import tkinter
-    tkinter._test()
+    gui = Gui()
+    gui.mainloop()
