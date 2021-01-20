@@ -40,12 +40,12 @@ def create_obj_dict(subcat, name, lat, lng):
       }
 
 
-def fetch_for_category(places_api, category, coordinates):
+def fetch_for_category(places_api, category, coordinates, radius):
     subcat_list = category_to_subcats[category]
     query_result = places_api.nearby_search(
         lat_lng=coordinates,
         types=subcat_list,
-        radius=2000)
+        radius=radius)
 
     feature_list = []
     for place in query_result.places:
@@ -65,7 +65,7 @@ def create_map_pois(gui_data):
 
     pois = {}
     for cat in gui_data['categories']:
-        pois[cat+"Pois"] = fetch_for_category(places_api, cat, gui_data['lat_lng'])
+        pois[cat+"Pois"] = fetch_for_category(places_api, cat, gui_data['lat_lng'], gui_data['radius'])
     return pois
 
 
@@ -75,13 +75,17 @@ def validate_gui_data(data):
         errors.append('Latitude must not be empty')
     if not data['lat_lng']['lng']:
         errors.append('Longitude must not be empty')
+    if not data['radius']:
+        errors.append('Radius must not be empty')
+    else:
+        data['radius'] = int(data['radius'])
     if not data['project_name']:
         errors.append('Project must be named')
     if not len(data['categories']):
         errors.append('At least one category must be selected')
     if not data['target_path']:
         errors.append('TargetPath must be specified')
-    return errors
+    return data, errors
 
 
 ''' ---------------------------------
@@ -143,11 +147,11 @@ class DirectorySelector:
         return self.__lbl.cget('text')
 
 
-TEXT_WIDTH = 40
+TEXT_WIDTH = 35
 
 
 class Gui(Tk):
-    __size = '550x350'
+    __size = '530x380'
     __title = "Fetch map POIs"
 
     def __init__(self, **kwargs):
@@ -164,17 +168,19 @@ class Gui(Tk):
         self.key = LabelledButton(self, "API_KEY", 0, text=API_KEY)
         self.lat = LabelledButton(self, "Latitude", 1)
         self.lng = LabelledButton(self, "Longitude", 2)
-        self.project = LabelledButton(self, "Project name", 3)
+        self.radius = LabelledButton(self, "Radius (meter)", 3, text='2000')
+        self.project = LabelledButton(self, "Project name", 4)
         self.cat_selector = CatSelector(self)
-        self.cat_selector.grid(row=4, column=1)
-        self.target_selector = DirectorySelector(self, 5)
+        self.cat_selector.grid(row=5, column=1)
+        self.target_selector = DirectorySelector(self, 6)
 
         self.generate_btn = Button(self, text="Generate json", command=self.generate_json)
-        self.generate_btn.grid(row=6, column=0)
+        self.generate_btn.grid(row=7, column=0)
 
     def fetch_data(self):
         data = {'api_key': self.key.get(),
                 'lat_lng': {'lat': self.lat.get(), 'lng': self.lng.get()},
+                'radius': self.radius.get(),
                 'project_name': self.project.get(),
                 'target_path': self.target_selector.get(),
                 'categories': self.cat_selector.get()
@@ -183,14 +189,13 @@ class Gui(Tk):
 
     def generate_json(self):
         data = self.fetch_data()
-        errors = validate_gui_data(data)
+        validated_data, errors = validate_gui_data(data)
 
         if len(errors):
             messagebox.showerror("Data Missing", '\n'.join(errors))
         else:
-
-            json_body = create_map_pois(data)
-            target_file = os.path.join(data['target_path'], data['project_name'] + '_pois.json')
+            json_body = create_map_pois(validated_data)
+            target_file = os.path.join(validated_data['target_path'], validated_data['project_name'] + '_pois.json')
 
             with open(target_file, 'w') as f:
                 json.dump(json_body, f, ensure_ascii=False, indent=2)
