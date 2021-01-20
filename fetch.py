@@ -6,15 +6,15 @@ from tkinter import messagebox
 from tkinter.filedialog import askdirectory
 
 from googleplaces import GooglePlaces, types
+from config import API_KEY
 
 
 ''' ---------------------------------
     
-    SECTION 1: Logc
+    SECTION 1: LogIc
 
 --------------------------------- '''
 
-API_KEY = 'AIzaSyB7D9c1Fb1hDD-hHUE1bh0mL0Xc1PMnyfc'
 
 category_to_subcats = {
     'bakery': [types.TYPE_BAKERY],
