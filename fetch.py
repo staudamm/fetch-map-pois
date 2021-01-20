@@ -157,8 +157,9 @@ class Gui(Tk):
     def __init__(self, **kwargs):
         super(Gui, self).__init__(**kwargs)
 
-        # p1 = PhotoImage(file='./icon.png')
-        # self.iconphoto(False, p1)
+        p1 = PhotoImage(file='./icon.png')
+        self.iconphoto(False, p1)
+        self.title("Fetch map POIs")
 
         self.title(self.__title)
         self.geometry(self.__size)
