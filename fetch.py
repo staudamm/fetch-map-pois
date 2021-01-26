@@ -22,7 +22,8 @@ category_to_subcats = {
     'culture': [types.TYPE_CHURCH, types.TYPE_MOVIE_THEATER, types.TYPE_ART_GALLERY, types.TYPE_MUSEUM],
     'gastronomy': [types.TYPE_RESTAURANT, types.TYPE_CAFE, types.TYPE_BAR],
     'post': [types.TYPE_POST_BOX, types.TYPE_POST_OFFICE],
-    'shop': [types.TYPE_SHOE_STORE, types.TYPE_GROCERY_OR_SUPERMARKET]
+    'shop': [types.TYPE_GROCERY_OR_SUPERMARKET, types.TYPE_CONVENIENCE_STORE,
+             types.TYPE_DEPARTMENT_STORE]
 }
 
 
@@ -35,7 +36,7 @@ def create_obj_dict(subcat, name, lat, lng):
         },
         "geometry": {
           "type": "Point",
-          "coordinates": [lat, lng]
+          "coordinates": [lng, lat]  # MapBox switches lat and lng compared to GoogleMaps!
         }
       }
 
@@ -65,7 +66,7 @@ def create_map_pois(gui_data):
 
     pois = {}
     for cat in gui_data['categories']:
-        pois[cat+"Pois"] = fetch_for_category(places_api, cat, gui_data['lat_lng'], gui_data['radius'])
+        pois[cat+"Poi"] = fetch_for_category(places_api, cat, gui_data['lat_lng'], gui_data['radius'])
     return pois
 
 
